@@ -20,7 +20,7 @@ def show_categories(sort=None, cat_selected=0):
 def show_posts(sort='title', cat_selected=0):
     if cat_selected:
         posts = Person.objects.filter(
-            cat_id=cat_selected,
+            cat__slug=cat_selected,
         ).order_by(sort)
     else:
         posts = Person.objects.all().order_by(sort)
