@@ -1,6 +1,9 @@
-from django.http import HttpResponse, HttpResponseNotFound, Http404
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse, HttpResponseNotFound
+from django.shortcuts import render, get_object_or_404, redirect
 
+from .forms import (
+    AddPostForm,
+)
 from .models import *
 
 menu = [
@@ -38,7 +41,31 @@ def about(request):
 
 
 def addpage(request):
-    return HttpResponse("Добавление статьи")
+    if request.method == 'POST':
+        form = AddPostForm(request.POST)
+        if form.is_valid():
+            # print(form.cleaned_data)
+            try:
+                Person.objects.create(**form.cleaned_data)
+
+                return redirect('home')
+            except:
+                form.add_error(
+                    field=None,
+                    error='Ошибка добавления поста',
+                )
+    else:
+        form=AddPostForm()
+
+    return render(
+        request=request,
+        template_name='app/addpage.html',
+        context={
+            'form': form,
+            'menu': menu,
+            'title': 'Добавление статьи',
+        },
+    )
 
 
 def contact(request):
