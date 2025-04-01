@@ -1,10 +1,24 @@
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render, get_object_or_404, redirect
+from django.http import (
+    HttpResponse,
+    HttpResponseNotFound,
+)
+from django.shortcuts import (
+    render,
+)
+from django.urls import (
+    reverse_lazy,
+)
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    ListView,
+)
 
 from .forms import (
     AddPostForm,
 )
 from .models import *
+
 
 menu = [
     {
@@ -26,40 +40,78 @@ menu = [
 ]
 
 
-def index(request):
-    context = {
-        'menu': menu,
-        'title': 'Главная страница',
-        'cat_selected': 0,
-    }
+class PersonHome(ListView):
+    model = Person
+    template_name = 'app/index.html'
+    context_object_name = 'posts'
 
-    return render(request, 'app/index.html', context=context)
+    def get_context_data(self, *, object_list=None, **kwargs):
+        contex = super().get_context_data(**kwargs)
+        contex['menu'] = menu
+        contex['title'] = 'Главная страница'
+        contex['cat_selected'] = 0
+
+        return contex
+
+    def get_queryset(self):
+        return Person.objects.filter(
+            is_published=True,
+        )
+
+
+class ShowPost(DetailView):
+    model = Person
+    template_name = 'app/post.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['title'] = context['post']
+        context['menu'] = menu
+
+        return context
+
+
+class PersonCategory(ListView):
+    model =Person
+    template_name = 'app/index.html'
+    context_object_name = 'posts'
+    allow_empty = False
+
+    def get_queryset(self):
+        return Person.objects.filter(
+            cat__slug=self.kwargs['cat_slug'],
+            is_published=True,
+        )
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['title'] = 'Категория - {}'.format(str(context['posts'][0].cat))
+        context['menu'] = menu
+        context['cat_selected'] = context['posts'][0].cat_id
+
+        return context
+
+
+class AddPage(CreateView):
+    form_class = AddPostForm
+    template_name = 'app/addpage.html'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['title'] = 'Добавление статьи'
+        context['menu'] = menu
+
+        return context
 
 
 def about(request):
     return render(request, 'app/about.html', {'menu': menu, 'title': 'О сайте'})
-
-
-def addpage(request):
-    if request.method == 'POST':
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            # print(form.cleaned_data)
-            form.save()
-
-            return redirect('home')
-    else:
-        form=AddPostForm()
-
-    return render(
-        request=request,
-        template_name='app/addpage.html',
-        context={
-            'form': form,
-            'menu': menu,
-            'title': 'Добавление статьи',
-        },
-    )
 
 
 def contact(request):
@@ -69,27 +121,6 @@ def contact(request):
 def login(request):
     return HttpResponse("Авторизация")
 
-
-def show_post(request, post_slug):
-    post = get_object_or_404(Person, slug=post_slug)
-
-    context = {
-        'post': post,
-        'menu': menu,
-        'title': post.title,
-        'cat_selected': post.cat_id,
-    }
-
-    return render(request, 'app/post.html', context=context)
-
-def show_category(request, cat_slug):
-    context = {
-        'menu': menu,
-        'title': 'Главная страница',
-        'cat_selected': cat_slug,
-    }
-
-    return render(request, 'app/index.html', context=context)
 
 def pageNotFound(request, exception):
     return HttpResponseNotFound('<h1>Страница не найдена</h1>')
