@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import (
     HttpResponse,
     HttpResponseNotFound,
@@ -13,45 +14,32 @@ from django.views.generic import (
     DetailView,
     ListView,
 )
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import (
     AddPostForm,
 )
 from .models import *
+from .utils import *
 
 
-menu = [
-    {
-        'title': 'О сайте',
-        'url_name': 'about',
-    },
-    {
-        'title': 'Добавить статью',
-        'url_name': 'add_page',
-    },
-    {
-        'title': 'Обратная связь',
-        'url_name': 'contact',
-    },
-    {
-        'title': 'Войти',
-        'url_name': 'login',
-    },
-]
 
 
-class PersonHome(ListView):
+class PersonHome(DataMixin, ListView):
     model = Person
     template_name = 'app/index.html'
     context_object_name = 'posts'
 
     def get_context_data(self, *, object_list=None, **kwargs):
-        contex = super().get_context_data(**kwargs)
-        contex['menu'] = menu
-        contex['title'] = 'Главная страница'
-        contex['cat_selected'] = 0
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(
+            title='Главная страница',
+        )
+        context.update(
+            **c_def,
+        )
 
-        return contex
+        return context
 
     def get_queryset(self):
         return Person.objects.filter(
@@ -59,7 +47,7 @@ class PersonHome(ListView):
         )
 
 
-class ShowPost(DetailView):
+class ShowPost(DataMixin, DetailView):
     model = Person
     template_name = 'app/post.html'
     slug_url_kwarg = 'post_slug'
@@ -68,13 +56,18 @@ class ShowPost(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['title'] = context['post']
-        context['menu'] = menu
+        title = context['post']
+        c_def = self.get_user_context(
+            title=title,
+        )
+        context.update(
+            **c_def,
+        )
 
         return context
 
 
-class PersonCategory(ListView):
+class PersonCategory(DataMixin, ListView):
     model =Person
     template_name = 'app/index.html'
     context_object_name = 'posts'
@@ -89,23 +82,36 @@ class PersonCategory(ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['title'] = 'Категория - {}'.format(str(context['posts'][0].cat))
-        context['menu'] = menu
-        context['cat_selected'] = context['posts'][0].cat_id
+        title = 'Категория - {}'.format(
+            str(context['posts'][0].cat),
+        )
+        cat_selected = context['posts'][0].cat_id
+        c_def = self.get_user_context(
+            title=title,
+            cat_selected=cat_selected,
+        )
+        context.update(
+            **c_def,
+        )
 
         return context
 
 
-class AddPage(CreateView):
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     template_name = 'app/addpage.html'
     success_url = reverse_lazy('home')
+    login_url = reverse_lazy('home')
+    raise_exception = True
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        context['title'] = 'Добавление статьи'
-        context['menu'] = menu
+        c_def = self.get_user_context(
+            title='Добавление статьи',
+        )
+        context.update(
+            **c_def,
+        )
 
         return context
 
