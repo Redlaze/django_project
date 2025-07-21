@@ -1,5 +1,5 @@
 {% for c in cats %}
-    {% if c.person__count > 0 %}
+    {% if c.person_set.count > 0 %}
         {% if c.pk == cat_selected %}
             <li class="selected">{{c.name}}</li>
         {% else %}
