@@ -17,10 +17,6 @@ menu = [
         'title': 'Обратная связь',
         'url_name': 'contact',
     },
-    {
-        'title': 'Войти',
-        'url_name': 'login',
-    },
 ]
 
 class DataMixin:
