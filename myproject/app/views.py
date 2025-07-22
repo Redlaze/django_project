@@ -13,14 +13,16 @@ from django.urls import (
 from django.views.generic import (
     CreateView,
     DetailView,
+    FormView,
     ListView,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import (
     AddPostForm,
-    RegisterUserForm,
+    ContactForm,
     LoginUserForm,
+    RegisterUserForm,
 )
 from .models import *
 from .utils import *
@@ -162,16 +164,31 @@ class LoginUser(DataMixin, LoginView):
         return reverse_lazy('home')
 
 
+class ContactFormView(DataMixin, FormView):
+    form_class = ContactForm
+    template_name = 'app/contact.html'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(
+            title='Обратная связь',
+        )
+
+        context.update(
+            **c_def,
+        )
+
+        return context
+
+    def form_valid(self, form):
+        print(form.cleaned_data)
+
+        return redirect('home')
+
+
 def about(request):
     return render(request, 'app/about.html', {'menu': menu, 'title': 'О сайте'})
-
-
-def contact(request):
-    return HttpResponse("Обратная связь")
-
-
-# def login(request):
-#     return HttpResponse("Авторизация")
 
 
 def logout_user(request):
