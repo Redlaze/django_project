@@ -37,3 +37,11 @@ class DataMixin:
             context['cat_selected'] = 0
 
         return context
+
+    @staticmethod
+    def get_posts():
+        return Person.objects.filter(
+            is_published=True,
+        ).select_related(
+            'cat',
+        )

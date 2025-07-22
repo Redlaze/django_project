@@ -45,9 +45,7 @@ class PersonHome(DataMixin, ListView):
         return context
 
     def get_queryset(self):
-        return Person.objects.filter(
-            is_published=True,
-        )
+        return self.get_posts()
 
 
 class ShowPost(DataMixin, DetailView):
@@ -77,18 +75,18 @@ class PersonCategory(DataMixin, ListView):
     allow_empty = False
 
     def get_queryset(self):
-        return Person.objects.filter(
+        return self.get_posts().filter(
             cat__slug=self.kwargs['cat_slug'],
-            is_published=True,
         )
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        first_post = context['posts'][0]
         title = 'Категория - {}'.format(
-            str(context['posts'][0].cat),
+            str(first_post.cat),
         )
-        cat_selected = context['posts'][0].cat_id
+        cat_selected = first_post.cat_id
         c_def = self.get_user_context(
             title=title,
             cat_selected=cat_selected,
